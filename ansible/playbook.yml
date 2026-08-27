@@ -1,0 +1,145 @@
+---
+- name: Configure Application Server
+  hosts: app
+  become: true
+
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install Docker and Docker Compose
+      apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+        state: present
+
+    - name: Start Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: true
+
+    - name: Verify Docker
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Verify Docker Compose
+      command: docker compose version
+      register: compose_version
+      changed_when: false
+
+    - name: Show Docker version
+      debug:
+        var: docker_version.stdout
+
+    - name: Show Docker Compose version
+      debug:
+        var: compose_version.stdout
+
+
+- name: Configure Database Server
+  hosts: db
+  become: true
+
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install MySQL
+      apt:
+        name:
+          - mysql-server
+          - python3-pymysql
+        state: present
+
+    - name: Configure MySQL to accept network connections
+      lineinfile:
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf
+        regexp: '^bind-address'
+        line: 'bind-address = 0.0.0.0'
+      notify: Restart MySQL
+
+    - name: Start MySQL
+      systemd:
+        name: mysql
+        state: started
+        enabled: true
+
+    - name: Create blogging database
+      shell: |
+        mysql -u root <<'SQL'
+        CREATE DATABASE IF NOT EXISTS blogdb;
+        SQL
+      changed_when: false
+
+    - name: Create blogging database user
+      shell: |
+        mysql -u root <<'SQL'
+        CREATE USER IF NOT EXISTS 'bloguser'@'10.0.1.%' IDENTIFIED BY 'blogpassword';
+        GRANT ALL PRIVILEGES ON blogdb.* TO 'bloguser'@'10.0.1.%';
+        FLUSH PRIVILEGES;
+        SQL
+      changed_when: false
+
+    - name: Create posts table
+      shell: |
+        mysql -u root blogdb <<'SQL'
+        CREATE TABLE IF NOT EXISTS posts (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          content TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        SQL
+      changed_when: false
+
+    - name: Insert sample blog post
+      shell: |
+        mysql -u root blogdb <<'SQL'
+        INSERT INTO posts (title, content)
+        SELECT 'Welcome to the Cloud Blog',
+               'This blog is deployed using DevOps practices.'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM posts WHERE title = 'Welcome to the Cloud Blog'
+        );
+        SQL
+      changed_when: false
+
+    - name: Verify MySQL
+      command: mysql --version
+      register: mysql_version
+      changed_when: false
+
+    - name: Show MySQL version
+      debug:
+        var: mysql_version.stdout
+
+    - name: Verify blog database
+      shell: mysql -u root -e "SHOW DATABASES;" | grep -w blogdb
+      register: database_check
+      changed_when: false
+
+    - name: Show database verification
+      debug:
+        var: database_check.stdout
+
+  handlers:
+
+    - name: Restart MySQL
+      systemd:
+        name: mysql
+        state: restarted
