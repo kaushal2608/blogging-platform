@@ -1,6 +1,8 @@
 pipeline {
 
-    agent any
+    agent {
+        label 'application'
+    }
 
     environment {
         DOCKERHUB_USER = 'kaushal2608'
@@ -8,7 +10,10 @@ pipeline {
         FRONTEND_IMAGE = 'kaushal2608/blogging-platform:frontend'
         BACKEND_IMAGE  = 'kaushal2608/blogging-platform:backend'
 
-        APP_SERVER = '10.0.1.91'
+        DB_HOST = '10.0.2.208'
+        DB_USER = 'bloguser'
+        DB_PASSWORD = 'blogpassword'
+        DB_NAME = 'blogdb'
     }
 
     stages {
@@ -20,14 +25,19 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build Frontend Image') {
             steps {
-
                 sh '''
-                    echo "Building frontend image..."
+                    echo "Building frontend Docker image..."
                     docker build -t $FRONTEND_IMAGE ./frontend
+                '''
+            }
+        }
 
-                    echo "Building backend image..."
+        stage('Build Backend Image') {
+            steps {
+                sh '''
+                    echo "Building backend Docker image..."
                     docker build -t $BACKEND_IMAGE ./backend
                 '''
             }
@@ -61,50 +71,41 @@ pipeline {
             }
         }
 
-        stage('Deploy to Application Server') {
+        stage('Deploy Application') {
             steps {
 
                 sh '''
-                    echo "Connecting to Application Server..."
+                    echo "Stopping old containers..."
 
-                    ssh -i /var/lib/jenkins/.ssh/prt.pem \
-                        -o StrictHostKeyChecking=no \
-                        ubuntu@$APP_SERVER "
-                        
-                        echo 'Pulling latest frontend image...'
-                        sudo docker pull $FRONTEND_IMAGE
+                    docker rm -f blogging-frontend 2>/dev/null || true
+                    docker rm -f blogging-backend 2>/dev/null || true
 
-                        echo 'Pulling latest backend image...'
-                        sudo docker pull $BACKEND_IMAGE
+                    echo "Creating Docker network..."
 
-                        echo 'Stopping old containers...'
-                        sudo docker rm -f blogging-frontend 2>/dev/null || true
-                        sudo docker rm -f blogging-backend 2>/dev/null || true
+                    docker network create blogging-network 2>/dev/null || true
 
-                        echo 'Creating Docker network...'
-                        sudo docker network create blogging-network 2>/dev/null || true
+                    echo "Starting backend..."
 
-                        echo 'Starting backend...'
-                        sudo docker run -d \
-                            --name blogging-backend \
-                            --network blogging-network \
-                            -e DB_HOST=10.0.2.208 \
-                            -e DB_USER=bloguser \
-                            -e DB_PASSWORD=blogpassword \
-                            -e DB_NAME=blogdb \
-                            $BACKEND_IMAGE
+                    docker run -d \
+                        --name blogging-backend \
+                        --network blogging-network \
+                        -e DB_HOST=$DB_HOST \
+                        -e DB_USER=$DB_USER \
+                        -e DB_PASSWORD=$DB_PASSWORD \
+                        -e DB_NAME=$DB_NAME \
+                        $BACKEND_IMAGE
 
-                        echo 'Starting frontend...'
-                        sudo docker run -d \
-                            --name blogging-frontend \
-                            --network blogging-network \
-                            -p 80:80 \
-                            $FRONTEND_IMAGE
+                    echo "Starting frontend..."
 
-                        echo 'Deployment completed.'
+                    docker run -d \
+                        --name blogging-frontend \
+                        --network blogging-network \
+                        -p 80:80 \
+                        $FRONTEND_IMAGE
 
-                        sudo docker ps
-                    "
+                    echo "Application deployed successfully."
+
+                    docker ps
                 '''
             }
         }
@@ -113,12 +114,17 @@ pipeline {
             steps {
 
                 sh '''
-                    echo "Checking application..."
+                    echo "Testing frontend..."
 
-                    ssh -i /var/lib/jenkins/.ssh/prt.pem \
-                        -o StrictHostKeyChecking=no \
-                        ubuntu@$APP_SERVER \
-                        "curl -f http://localhost && echo 'APPLICATION IS WORKING'"
+                    curl -f http://localhost
+
+                    echo ""
+                    echo "Testing backend..."
+
+                    curl -f http://localhost:5000/health || true
+
+                    echo ""
+                    echo "Application verification completed."
                 '''
             }
         }
@@ -127,17 +133,17 @@ pipeline {
     post {
 
         success {
-            echo '======================================'
+            echo '=========================================='
             echo 'JENKINS PIPELINE SUCCESSFUL'
             echo 'APPLICATION DEPLOYED'
-            echo '======================================'
+            echo '=========================================='
         }
 
         failure {
-            echo '======================================'
+            echo '=========================================='
             echo 'JENKINS PIPELINE FAILED'
             echo 'CHECK CONSOLE OUTPUT'
-            echo '======================================'
+            echo '=========================================='
         }
     }
 }
