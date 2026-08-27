@@ -1,0 +1,22 @@
+services:
+
+  frontend:
+    build: ./frontend
+    container_name: blogging-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: blogging-backend
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: 10.0.2.208
+      DB_USER: bloguser
+      DB_PASSWORD: blogpassword
+      DB_NAME: blogdb
+    restart: unless-stopped
