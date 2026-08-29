@@ -8,7 +8,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'kaushal2608'
         FRONTEND_IMAGE = 'kaushal2608/blogging-platform:frontend'
         BACKEND_IMAGE = 'kaushal2608/blogging-platform:backend'
-        APP_SERVER = '10.0.1.91'
+        APP_SERVER = '10.0.1.46'
         DOCKER_NETWORK = 'blogging-network'
     }
 
@@ -97,7 +97,7 @@ pipeline {
                         --name blogging-backend \
                         --network ${DOCKER_NETWORK} \
                         -p 5000:5000 \
-                        -e DB_HOST=10.0.2.208 \
+                        -e DB_HOST=10.0.2.174 \
                         -e DB_USER=bloguser \
                         -e DB_PASSWORD=blogpassword \
                         -e DB_NAME=blogdb \
