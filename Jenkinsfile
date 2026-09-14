@@ -8,7 +8,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'kaushal2608'
         FRONTEND_IMAGE = 'kaushal2608/blogging-platform:frontend'
         BACKEND_IMAGE = 'kaushal2608/blogging-platform:backend'
-        APP_SERVER = '10.0.1.46'
+        APP_SERVER = '10.0.1.72'
         DOCKER_NETWORK = 'blogging-network'
     }
 
