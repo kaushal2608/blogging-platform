@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Blogging Platform</title>
+    <title>Cloud E-Commerce Platform</title>
 
     <style>
         body {
@@ -41,11 +41,51 @@
             background: #2563eb;
             color: white;
             cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #1d4ed8;
         }
 
         #status {
             margin-top: 15px;
             font-weight: bold;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .product-card h3 {
+            margin-top: 0;
+            color: #1f2937;
+        }
+
+        .price {
+            color: #059669;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
         }
     </style>
 </head>
@@ -53,39 +93,49 @@
 <body>
 
 <header>
-    <h1>Cloud Blogging Platform</h1>
-    <p>Deployed using AWS, Terraform, Ansible, Docker & Jenkins</p>
+    <h1>🛒 Cloud E-Commerce Platform</h1>
+    <p>3-Tier DevOps Deployment | Frontend (HTML/Nginx) &bull; Backend (Node.js) &bull; Database (MySQL)</p>
 </header>
 
 <div class="container">
 
     <div class="card">
-        <h2>Welcome to My Blog kaushal</h2>
+        <h2>E-Commerce System Status</h2>
         <p>
-            This is a simple cloud-native blogging platform created
-            for a DevOps deployment assignment.
+            Welcome to the 3-tier E-Commerce platform deployed with automated CI/CD using Terraform, Ansible, Docker, and Jenkins.
         </p>
 
         <button onclick="checkBackend()">
-            Check Backend API
+            Check Backend & Database Connection
         </button>
 
         <div id="status"></div>
     </div>
 
     <div class="card">
-        <h2>DevOps Stack</h2>
+        <h2>🛍️ Available Products in Store</h2>
+        <p>Products loaded live from the MySQL private database tier:</p>
+        
+        <button onclick="loadProducts()">
+            Refresh Product Catalog
+        </button>
 
+        <div id="products-list" class="product-grid">
+            <p>Click "Refresh Product Catalog" or wait for automatic fetch...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>DevOps Architecture Stack</h2>
         <ul>
-            <li>AWS EC2</li>
-            <li>Terraform</li>
-            <li>Ansible</li>
-            <li>Docker</li>
-            <li>Docker Compose</li>
-            <li>Jenkins</li>
-            <li>GitHub</li>
-            <li>Docker Hub</li>
-            <li>MySQL</li>
+            <li><strong>Infrastructure:</strong> AWS (VPC, Public/Private Subnets, IGW, NAT Gateway, Security Groups)</li>
+            <li><strong>IaC:</strong> Terraform</li>
+            <li><strong>Configuration Management:</strong> Ansible</li>
+            <li><strong>CI/CD Automation:</strong> Jenkins (Master on Bastion, Application Node)</li>
+            <li><strong>Containerization:</strong> Docker & Docker Compose (Docker Hub Registry)</li>
+            <li><strong>Application Tier:</strong> Node.js Express REST API (Port 5000)</li>
+            <li><strong>Frontend Tier:</strong> Nginx Web Server / Static HTML (Port 80)</li>
+            <li><strong>Database Tier:</strong> MySQL 8.0 in Private Subnet (Port 3306)</li>
         </ul>
     </div>
 
@@ -93,27 +143,57 @@
 
 <script>
 async function checkBackend() {
-
     const status = document.getElementById("status");
-
-    status.innerText = "Checking backend...";
+    status.innerText = "Checking backend and database connection...";
+    status.style.color = "#2563eb";
 
     try {
-
         const response = await fetch("/api/health");
-
         const data = await response.json();
 
-        status.innerText =
-            "Backend Status: " + data.message;
-
+        if (data.status === "success") {
+            status.innerText = "✅ " + data.message;
+            status.style.color = "#059669";
+        } else {
+            status.innerText = "⚠️ " + data.message;
+            status.style.color = "#d97706";
+        }
     } catch (error) {
-
-        status.innerText =
-            "Backend is currently unavailable.";
-
+        status.innerText = "❌ Backend is currently unavailable.";
+        status.style.color = "#dc2626";
     }
 }
+
+async function loadProducts() {
+    const container = document.getElementById("products-list");
+    container.innerHTML = "<p>Loading products from database...</p>";
+
+    try {
+        const response = await fetch("/api/products");
+        const products = await response.json();
+
+        if (Array.isArray(products) && products.length > 0) {
+            container.innerHTML = products.map(item => `
+                <div class="product-card">
+                    <span class="badge">Item #${item.id}</span>
+                    <h3>${item.name}</h3>
+                    <div class="price">₹${parseFloat(item.price).toFixed(2)}</div>
+                    <p>${item.description}</p>
+                </div>
+            `).join("");
+        } else {
+            container.innerHTML = "<p>No products found in the database.</p>";
+        }
+    } catch (error) {
+        container.innerHTML = "<p style='color:red;'>Could not load products. Ensure backend is running.</p>";
+    }
+}
+
+// Auto-load products on page open
+window.onload = function() {
+    checkBackend();
+    loadProducts();
+};
 </script>
 
 </body>

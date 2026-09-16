@@ -1,8 +1,8 @@
 [app]
-application ansible_host=10.0.1.91
+application ansible_host=10.0.1.89
 
 [db]
-database ansible_host=10.0.2.208
+database ansible_host=10.0.2.88
 
 [all:vars]
 ansible_user=ubuntu

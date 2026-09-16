@@ -3,5 +3,5 @@ variable "aws_region" {
 }
 
 variable "key_name" {
-  default = "prt"
+  default = "prt2"
 }

@@ -60,7 +60,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "blogging-vpc"
+    Name = "ecommerce-vpc"
   }
 }
 
@@ -75,7 +75,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "blogging-public-subnet"
+    Name = "ecommerce-public-subnet"
   }
 }
 
@@ -89,7 +89,7 @@ resource "aws_subnet" "private" {
   availability_zone = "${var.aws_region}b"
 
   tags = {
-    Name = "blogging-private-subnet"
+    Name = "ecommerce-private-subnet"
   }
 }
 
@@ -101,7 +101,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "blogging-igw"
+    Name = "ecommerce-igw"
   }
 }
 
@@ -118,7 +118,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "blogging-public-rt"
+    Name = "ecommerce-public-rt"
   }
 }
 
@@ -135,7 +135,7 @@ resource "aws_eip" "nat" {
   domain = "vpc"
 
   tags = {
-    Name = "blogging-nat-eip"
+    Name = "ecommerce-nat-eip"
   }
 }
 
@@ -152,7 +152,7 @@ resource "aws_nat_gateway" "main" {
   ]
 
   tags = {
-    Name = "blogging-nat-gateway"
+    Name = "ecommerce-nat-gateway"
   }
 }
 
@@ -169,7 +169,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name = "blogging-private-rt"
+    Name = "ecommerce-private-rt"
   }
 }
 
@@ -179,11 +179,11 @@ resource "aws_route_table_association" "private" {
 }
 
 # =========================================================
-# PUBLIC SECURITY GROUP
+# PUBLIC SECURITY GROUP (Bastion & Application)
 # =========================================================
 
 resource "aws_security_group" "public" {
-  name        = "blogging-public-sg"
+  name        = "ecommerce-public-sg"
   description = "Security group for Bastion and Application"
   vpc_id      = aws_vpc.main.id
 
@@ -191,6 +191,14 @@ resource "aws_security_group" "public" {
     description = "SSH"
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Jenkins"
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -227,7 +235,7 @@ resource "aws_security_group" "public" {
   }
 
   tags = {
-    Name = "blogging-public-sg"
+    Name = "ecommerce-public-sg"
   }
 }
 
@@ -236,7 +244,7 @@ resource "aws_security_group" "public" {
 # =========================================================
 
 resource "aws_security_group" "database" {
-  name        = "blogging-database-sg"
+  name        = "ecommerce-database-sg"
   description = "Security group for MySQL"
   vpc_id      = aws_vpc.main.id
 
@@ -264,7 +272,7 @@ resource "aws_security_group" "database" {
   }
 
   tags = {
-    Name = "blogging-database-sg"
+    Name = "ecommerce-database-sg"
   }
 }
 
@@ -274,13 +282,19 @@ resource "aws_security_group" "database" {
 
 resource "aws_instance" "bastion" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.medium"
+  instance_type          = "t3.large"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.public.id]
   key_name               = data.aws_key_pair.existing.key_name
 
+  root_block_device {
+    volume_size           = 30
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
+
   tags = {
-    Name = "blogging-bastion-jenkins"
+    Name = "ecommerce-bastion-jenkins"
     Role = "bastion"
   }
 }
@@ -291,13 +305,19 @@ resource "aws_instance" "bastion" {
 
 resource "aws_instance" "application" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.medium"
+  instance_type          = "t3.large"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.public.id]
   key_name               = data.aws_key_pair.existing.key_name
 
+  root_block_device {
+    volume_size           = 30
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
+
   tags = {
-    Name = "blogging-application"
+    Name = "ecommerce-application"
     Role = "application"
   }
 }
@@ -308,13 +328,19 @@ resource "aws_instance" "application" {
 
 resource "aws_instance" "database" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.medium"
+  instance_type          = "t3.large"
   subnet_id              = aws_subnet.private.id
   vpc_security_group_ids = [aws_security_group.database.id]
   key_name               = data.aws_key_pair.existing.key_name
 
+  root_block_device {
+    volume_size           = 30
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
+
   tags = {
-    Name = "blogging-database"
+    Name = "ecommerce-database"
     Role = "database"
   }
 }

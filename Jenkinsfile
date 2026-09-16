@@ -1,15 +1,15 @@
 pipeline {
 
     agent {
-        label 'blogging-application'
+        label 'application'
     }
 
     environment {
         DOCKERHUB_USERNAME = 'kaushal2608'
-        FRONTEND_IMAGE = 'kaushal2608/blogging-platform:frontend'
-        BACKEND_IMAGE = 'kaushal2608/blogging-platform:backend'
-        APP_SERVER = '10.0.1.72'
-        DOCKER_NETWORK = 'blogging-network'
+        FRONTEND_IMAGE = 'kaushal2608/ecommerce-frontend:latest'
+        BACKEND_IMAGE = 'kaushal2608/ecommerce-backend:latest'
+        DOCKER_NETWORK = 'ecommerce-network'
+        DB_HOST = '10.0.2.88'
     }
 
     stages {
@@ -86,21 +86,21 @@ pipeline {
 
         stage('Deploy Backend') {
             steps {
-                echo 'Deploying backend...'
+                echo 'Deploying ecommerce backend...'
 
                 sh '''
-                    docker rm -f blogging-backend || true
+                    docker rm -f ecommerce-backend || true
 
                     docker pull ${BACKEND_IMAGE}
 
                     docker run -d \
-                        --name blogging-backend \
+                        --name ecommerce-backend \
                         --network ${DOCKER_NETWORK} \
                         -p 5000:5000 \
-                        -e DB_HOST=10.0.2.174 \
-                        -e DB_USER=bloguser \
-                        -e DB_PASSWORD=blogpassword \
-                        -e DB_NAME=blogdb \
+                        -e DB_HOST=${DB_HOST} \
+                        -e DB_USER=ecomuser \
+                        -e DB_PASSWORD=ecompassword \
+                        -e DB_NAME=ecomdb \
                         --restart unless-stopped \
                         ${BACKEND_IMAGE}
                 '''
@@ -109,15 +109,15 @@ pipeline {
 
         stage('Deploy Frontend') {
             steps {
-                echo 'Deploying frontend...'
+                echo 'Deploying ecommerce frontend...'
 
                 sh '''
-                    docker rm -f blogging-frontend || true
+                    docker rm -f ecommerce-frontend || true
 
                     docker pull ${FRONTEND_IMAGE}
 
                     docker run -d \
-                        --name blogging-frontend \
+                        --name ecommerce-frontend \
                         --network ${DOCKER_NETWORK} \
                         -p 80:80 \
                         --restart unless-stopped \
@@ -139,9 +139,9 @@ pipeline {
                     curl -f http://localhost
 
                     echo "Testing backend..."
-                    curl -f http://localhost:5000 || true
+                    curl -f http://localhost:5000/health || true
 
-                    echo "Application deployment successful!"
+                    echo "E-Commerce application deployment successful!"
                 '''
             }
         }
@@ -152,7 +152,7 @@ pipeline {
         success {
             echo '======================================'
             echo 'JENKINS PIPELINE SUCCESSFUL'
-            echo 'APPLICATION DEPLOYED'
+            echo 'E-COMMERCE APPLICATION DEPLOYED'
             echo '======================================'
         }
 

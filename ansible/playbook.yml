@@ -79,42 +79,59 @@
         state: started
         enabled: true
 
-    - name: Create blogging database
+    - name: Create ecommerce database
       shell: |
         mysql -u root <<'SQL'
-        CREATE DATABASE IF NOT EXISTS blogdb;
+        CREATE DATABASE IF NOT EXISTS ecomdb;
         SQL
       changed_when: false
 
-    - name: Create blogging database user
+    - name: Create ecommerce database user
       shell: |
         mysql -u root <<'SQL'
-        CREATE USER IF NOT EXISTS 'bloguser'@'10.0.1.%' IDENTIFIED BY 'blogpassword';
-        GRANT ALL PRIVILEGES ON blogdb.* TO 'bloguser'@'10.0.1.%';
+        CREATE USER IF NOT EXISTS 'ecomuser'@'%' IDENTIFIED BY 'ecompassword';
+        GRANT ALL PRIVILEGES ON ecomdb.* TO 'ecomuser'@'%';
+        CREATE USER IF NOT EXISTS 'ecomuser'@'10.0.1.%' IDENTIFIED BY 'ecompassword';
+        GRANT ALL PRIVILEGES ON ecomdb.* TO 'ecomuser'@'10.0.1.%';
         FLUSH PRIVILEGES;
         SQL
       changed_when: false
 
-    - name: Create posts table
+    - name: Create products table
       shell: |
-        mysql -u root blogdb <<'SQL'
-        CREATE TABLE IF NOT EXISTS posts (
+        mysql -u root ecomdb <<'SQL'
+        CREATE TABLE IF NOT EXISTS products (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          title VARCHAR(255) NOT NULL,
-          content TEXT NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          price DECIMAL(10, 2) NOT NULL,
+          description TEXT NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         SQL
       changed_when: false
 
-    - name: Insert sample blog post
+    - name: Insert sample products
       shell: |
-        mysql -u root blogdb <<'SQL'
-        INSERT INTO posts (title, content)
-        SELECT 'Welcome to the Cloud Blog',
-               'This blog is deployed using DevOps practices.'
+        mysql -u root ecomdb <<'SQL'
+        INSERT INTO products (name, price, description)
+        SELECT 'Laptop', 55000.00, 'High performance laptop for development'
         WHERE NOT EXISTS (
-          SELECT 1 FROM posts WHERE title = 'Welcome to the Cloud Blog'
+          SELECT 1 FROM products WHERE name = 'Laptop'
+        );
+        INSERT INTO products (name, price, description)
+        SELECT 'Wireless Mouse', 800.00, 'Ergonomic 2.4GHz wireless optical mouse'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM products WHERE name = 'Wireless Mouse'
+        );
+        INSERT INTO products (name, price, description)
+        SELECT 'Mechanical Keyboard', 2500.00, 'RGB backlit mechanical tactile keyboard'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM products WHERE name = 'Mechanical Keyboard'
+        );
+        INSERT INTO products (name, price, description)
+        SELECT 'Gaming Headset', 1800.00, 'Noise-cancelling surround sound headphones'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM products WHERE name = 'Gaming Headset'
         );
         SQL
       changed_when: false
@@ -128,8 +145,8 @@
       debug:
         var: mysql_version.stdout
 
-    - name: Verify blog database
-      shell: mysql -u root -e "SHOW DATABASES;" | grep -w blogdb
+    - name: Verify ecommerce database
+      shell: mysql -u root -e "SHOW DATABASES;" | grep -w ecomdb
       register: database_check
       changed_when: false
 

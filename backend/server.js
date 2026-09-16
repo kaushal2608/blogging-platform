@@ -9,61 +9,48 @@ const PORT = 5000;
 
 const dbConfig = {
     host: process.env.DB_HOST || "database",
-    user: process.env.DB_USER || "bloguser",
-    password: process.env.DB_PASSWORD || "blogpassword",
-    database: process.env.DB_NAME || "blogdb"
+    user: process.env.DB_USER || "ecomuser",
+    password: process.env.DB_PASSWORD || "ecompassword",
+    database: process.env.DB_NAME || "ecomdb"
 };
 
 app.get("/health", async (req, res) => {
-
     try {
-
         const connection = await mysql.createConnection(dbConfig);
-
         await connection.query("SELECT 1");
-
         await connection.end();
 
         res.json({
             status: "success",
-            message: "Backend API and MySQL are working!"
+            message: "Backend API and MySQL Database are working!"
         });
-
     } catch (error) {
-
         res.status(500).json({
             status: "error",
-            message: "Backend is running but MySQL is unavailable."
+            message: "Backend is running but MySQL is unavailable.",
+            error: error.message
         });
-
     }
 });
 
-app.get("/posts", async (req, res) => {
-
+app.get("/products", async (req, res) => {
     try {
-
         const connection = await mysql.createConnection(dbConfig);
-
         const [rows] = await connection.query(
-            "SELECT * FROM posts ORDER BY id DESC"
+            "SELECT * FROM products ORDER BY id ASC"
         );
-
         await connection.end();
 
         res.json(rows);
-
     } catch (error) {
-
         res.status(500).json({
-            error: "Unable to fetch posts"
+            status: "error",
+            error: "Unable to fetch products",
+            details: error.message
         });
-
     }
 });
 
 app.listen(PORT, () => {
-
-    console.log(`Backend running on port ${PORT}`);
-
+    console.log(`E-Commerce Backend running on port ${PORT}`);
 });
