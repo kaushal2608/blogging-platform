@@ -1,13 +1,14 @@
 {
   "name": "ecommerce-backend",
   "version": "1.0.0",
-  "description": "Simple e-commerce platform backend",
+  "description": "3-Tier E-Commerce Platform Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^5.1.0",
-    "mysql2": "^3.14.4"
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mysql2": "^3.9.7"
   }
 }

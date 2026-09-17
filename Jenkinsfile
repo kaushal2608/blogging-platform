@@ -6,59 +6,70 @@ pipeline {
 
     environment {
         DOCKERHUB_USERNAME = 'kaushal2608'
-        FRONTEND_IMAGE = 'kaushal2608/ecommerce-frontend:latest'
-        BACKEND_IMAGE = 'kaushal2608/ecommerce-backend:latest'
-        DOCKER_NETWORK = 'ecommerce-network'
-        DB_HOST = '10.0.2.88'
+        FRONTEND_IMAGE     = "${DOCKERHUB_USERNAME}/ecommerce-frontend:latest"
+        BACKEND_IMAGE      = "${DOCKERHUB_USERNAME}/ecommerce-backend:latest"
+        DOCKER_NETWORK     = 'ecommerce-network'
+        DB_HOST            = '10.0.3.75'
+        DB_USER            = 'ecomuser'
+        DB_PASSWORD        = 'ecompassword'
+        DB_NAME            = 'ecomdb'
     }
 
     stages {
 
         stage('Checkout Code') {
             steps {
-                echo 'Checking out code from GitHub...'
+                echo '============================================='
+                echo 'Stage 1: Checking out code from GitHub repository'
+                echo '============================================='
                 checkout scm
             }
         }
 
-        stage('Build Frontend Image') {
+        stage('Build Frontend Docker Image') {
             steps {
-                echo 'Building frontend Docker image...'
-
+                echo '============================================='
+                echo 'Stage 2: Building Frontend Docker Image'
+                echo "Image: ${FRONTEND_IMAGE}"
+                echo '============================================='
                 sh '''
                     docker build \
-                    -t ${FRONTEND_IMAGE} \
-                    ./frontend
+                        -t ${FRONTEND_IMAGE} \
+                        ./frontend
                 '''
             }
         }
 
-        stage('Build Backend Image') {
+        stage('Build Backend Docker Image') {
             steps {
-                echo 'Building backend Docker image...'
-
+                echo '============================================='
+                echo 'Stage 3: Building Backend Docker Image'
+                echo "Image: ${BACKEND_IMAGE}"
+                echo '============================================='
                 sh '''
                     docker build \
-                    -t ${BACKEND_IMAGE} \
-                    ./backend
+                        -t ${BACKEND_IMAGE} \
+                        ./backend
                 '''
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
+                echo '============================================='
+                echo 'Stage 4: Authenticating to Docker Hub'
+                echo '============================================='
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'dockerhub',
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-
                     sh '''
-                        echo "$DOCKER_PASSWORD" | docker login \
-                        -u "$DOCKER_USERNAME" \
-                        --password-stdin
+                        echo "$DOCKER_PASS" | docker login \
+                            -u "$DOCKER_USER" \
+                            --password-stdin
                     '''
                 }
             }
@@ -66,8 +77,9 @@ pipeline {
 
         stage('Push Images to Docker Hub') {
             steps {
-                echo 'Pushing images to Docker Hub...'
-
+                echo '============================================='
+                echo 'Stage 5: Pushing Images to Docker Hub'
+                echo '============================================='
                 sh '''
                     docker push ${FRONTEND_IMAGE}
                     docker push ${BACKEND_IMAGE}
@@ -75,8 +87,11 @@ pipeline {
             }
         }
 
-        stage('Create Docker Network') {
+        stage('Configure Docker Network') {
             steps {
+                echo '============================================='
+                echo "Stage 6: Ensuring Custom Network '${DOCKER_NETWORK}' exists"
+                echo '============================================='
                 sh '''
                     docker network inspect ${DOCKER_NETWORK} >/dev/null 2>&1 || \
                     docker network create ${DOCKER_NETWORK}
@@ -84,38 +99,46 @@ pipeline {
             }
         }
 
-        stage('Deploy Backend') {
+        stage('Deploy Backend Container') {
             steps {
-                echo 'Deploying ecommerce backend...'
-
+                echo '============================================='
+                echo 'Stage 7: Deploying Node.js Backend Container'
+                echo '============================================='
                 sh '''
+                    echo "Stopping and removing existing backend container if any..."
                     docker rm -f ecommerce-backend || true
 
+                    echo "Pulling latest backend image..."
                     docker pull ${BACKEND_IMAGE}
 
+                    echo "Starting ecommerce-backend container connected to ${DOCKER_NETWORK}..."
                     docker run -d \
                         --name ecommerce-backend \
                         --network ${DOCKER_NETWORK} \
                         -p 5000:5000 \
                         -e DB_HOST=${DB_HOST} \
-                        -e DB_USER=ecomuser \
-                        -e DB_PASSWORD=ecompassword \
-                        -e DB_NAME=ecomdb \
+                        -e DB_USER=${DB_USER} \
+                        -e DB_PASSWORD=${DB_PASSWORD} \
+                        -e DB_NAME=${DB_NAME} \
                         --restart unless-stopped \
                         ${BACKEND_IMAGE}
                 '''
             }
         }
 
-        stage('Deploy Frontend') {
+        stage('Deploy Frontend Container') {
             steps {
-                echo 'Deploying ecommerce frontend...'
-
+                echo '============================================='
+                echo 'Stage 8: Deploying Nginx Frontend Container'
+                echo '============================================='
                 sh '''
+                    echo "Stopping and removing existing frontend container if any..."
                     docker rm -f ecommerce-frontend || true
 
+                    echo "Pulling latest frontend image..."
                     docker pull ${FRONTEND_IMAGE}
 
+                    echo "Starting ecommerce-frontend container connected to ${DOCKER_NETWORK}..."
                     docker run -d \
                         --name ecommerce-frontend \
                         --network ${DOCKER_NETWORK} \
@@ -126,41 +149,43 @@ pipeline {
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Verify Application Running') {
             steps {
-                echo 'Verifying containers...'
-
+                echo '============================================='
+                echo 'Stage 9: Verifying Running Containers & Endpoints'
+                echo '============================================='
                 sh '''
+                    echo "Waiting 5 seconds for containers to initialize..."
                     sleep 5
 
-                    docker ps
+                    echo "Checking running Docker containers:"
+                    docker ps --filter "name=ecommerce-"
 
-                    echo "Testing frontend..."
-                    curl -f http://localhost
+                    echo "Testing Frontend HTTP response (port 80):"
+                    curl -Is http://localhost:80 | head -n 5
 
-                    echo "Testing backend..."
-                    curl -f http://localhost:5000/health || true
+                    echo "Testing Backend /health endpoint (port 5000):"
+                    curl -s http://localhost:5000/health || true
+                    echo ""
 
-                    echo "E-Commerce application deployment successful!"
+                    echo "Testing Frontend-to-Backend proxy (/api/health):"
+                    curl -s http://localhost/api/health || true
+                    echo ""
                 '''
             }
         }
     }
 
     post {
-
         success {
-            echo '======================================'
-            echo 'JENKINS PIPELINE SUCCESSFUL'
-            echo 'E-COMMERCE APPLICATION DEPLOYED'
-            echo '======================================'
+            echo '====================================================='
+            echo ' SUCCESS: 3-TIER E-COMMERCE APPLICATION DEPLOYED!    '
+            echo '====================================================='
         }
-
         failure {
-            echo '======================================'
-            echo 'JENKINS PIPELINE FAILED'
-            echo 'CHECK THE BUILD LOG'
-            echo '======================================'
+            echo '====================================================='
+            echo ' FAILURE: PIPELINE FAILED. CHECK CONSOLE OUTPUT.     '
+            echo '====================================================='
         }
     }
 }

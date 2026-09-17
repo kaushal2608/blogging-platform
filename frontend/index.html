@@ -3,197 +3,732 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud E-Commerce Platform</title>
+    <title>CloudMart — 3-Tier E-Commerce Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body {
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #0f172a;
+            --card-bg: #ffffff;
+            --bg-body: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #222;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NAVBAR */
         header {
-            background: #1f2937;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             color: white;
-            padding: 25px;
-            text-align: center;
+            padding: 20px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .card {
-            background: white;
-            padding: 25px;
-            margin-bottom: 20px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .brand h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand span {
+            color: var(--secondary);
+        }
+
+        .badge-pill {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cart-indicator {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-
-        button {
-            padding: 10px 18px;
-            border: none;
-            border-radius: 6px;
-            background: #2563eb;
-            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             cursor: pointer;
-            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.15);
         }
 
-        button:hover {
-            background: #1d4ed8;
+        .cart-count {
+            background: var(--secondary);
+            color: #0f172a;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-weight: 800;
+            font-size: 12px;
         }
 
-        #status {
-            margin-top: 15px;
-            font-weight: bold;
+        /* MAIN CONTAINER */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 24px;
+            width: 100%;
+            flex: 1;
         }
 
+        /* STATUS BANNER */
+        .status-banner {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .status-icon.success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-icon.error {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .status-text h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .status-text p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: #eef2ff;
+        }
+
+        /* ARCHITECTURE TIERS BAR */
+        .tiers-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .tier-card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+
+        .tier-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .tier-1::before { background: #3b82f6; }
+        .tier-2::before { background: #10b981; }
+        .tier-3::before { background: #8b5cf6; }
+
+        .tier-badge {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        .tier-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .tier-tech {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* CATALOG HEADER */
+        .catalog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .catalog-header h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        /* PRODUCT GRID */
         .product-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
         }
 
         .product-card {
-            border: 1px solid #e5e7eb;
-            padding: 15px;
-            border-radius: 8px;
-            background: #fafafa;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         }
 
-        .product-card h3 {
-            margin-top: 0;
-            color: #1f2937;
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+            border-color: #cbd5e1;
         }
 
-        .price {
-            color: #059669;
-            font-size: 1.2em;
-            font-weight: bold;
-            margin: 8px 0;
-        }
-
-        .badge {
+        .prod-category {
             display: inline-block;
-            background: #e0e7ff;
-            color: #3730a3;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.85em;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .prod-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .prod-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 16px;
+            flex-grow: 1;
+        }
+
+        .prod-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .prod-price {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .prod-stock {
+            font-size: 11px;
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* ADD PRODUCT FORM SECTION */
+        .add-product-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 40px;
+        }
+
+        .add-product-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: var(--primary);
+        }
+
+        /* DEVOPS SPEC SECTION */
+        .devops-info {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 40px;
+        }
+
+        .devops-info h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--secondary);
+        }
+
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 20px;
+        }
+
+        .spec-item h5 {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .spec-item p {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        /* FOOTER */
+        footer {
+            background: #0f172a;
+            color: #94a3b8;
+            text-align: center;
+            padding: 24px;
+            font-size: 13px;
+            margin-top: auto;
+            border-top: 1px solid #1e293b;
+        }
+
+        #notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1e293b;
+            color: white;
+            padding: 14px 22px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
         }
     </style>
 </head>
 
 <body>
 
+<!-- HEADER -->
 <header>
-    <h1>🛒 Cloud E-Commerce Platform</h1>
-    <p>3-Tier DevOps Deployment | Frontend (HTML/Nginx) &bull; Backend (Node.js) &bull; Database (MySQL)</p>
+    <div class="nav-container">
+        <div class="brand">
+            <div class="brand-logo">🛒</div>
+            <div>
+                <h1>Cloud<span>Mart</span></h1>
+                <span class="badge-pill">3-Tier E-Commerce DevOps Platform</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="cart-indicator" onclick="showNotification('Your Cart is synchronized with the session.')">
+                <span>🛒 Cart</span>
+                <span id="cart-count" class="cart-count">0</span>
+            </div>
+        </div>
+    </div>
 </header>
 
+<!-- MAIN CONTENT -->
 <div class="container">
 
-    <div class="card">
-        <h2>E-Commerce System Status</h2>
-        <p>
-            Welcome to the 3-tier E-Commerce platform deployed with automated CI/CD using Terraform, Ansible, Docker, and Jenkins.
-        </p>
-
-        <button onclick="checkBackend()">
-            Check Backend & Database Connection
-        </button>
-
-        <div id="status"></div>
-    </div>
-
-    <div class="card">
-        <h2>🛍️ Available Products in Store</h2>
-        <p>Products loaded live from the MySQL private database tier:</p>
-        
-        <button onclick="loadProducts()">
-            Refresh Product Catalog
-        </button>
-
-        <div id="products-list" class="product-grid">
-            <p>Click "Refresh Product Catalog" or wait for automatic fetch...</p>
+    <!-- ARCHITECTURE TIERS OVERVIEW -->
+    <div class="tiers-row">
+        <div class="tier-card tier-1">
+            <div class="tier-badge">Tier 1 &bull; Presentation</div>
+            <div class="tier-title">Frontend (Nginx)</div>
+            <div class="tier-tech">Containerized Alpine Nginx on Port 80 &bull; Public Subnet</div>
+        </div>
+        <div class="tier-card tier-2">
+            <div class="tier-badge">Tier 2 &bull; Application</div>
+            <div class="tier-title">Backend (Node.js/Express)</div>
+            <div class="tier-tech">Containerized REST API on Port 5000 &bull; Bridge Network</div>
+        </div>
+        <div class="tier-card tier-3">
+            <div class="tier-badge">Tier 3 &bull; Database</div>
+            <div class="tier-title">Database (MySQL 8.0)</div>
+            <div class="tier-tech">MySQL Server on Port 3306 &bull; Private Subnet + NAT</div>
         </div>
     </div>
 
-    <div class="card">
-        <h2>DevOps Architecture Stack</h2>
-        <ul>
-            <li><strong>Infrastructure:</strong> AWS (VPC, Public/Private Subnets, IGW, NAT Gateway, Security Groups)</li>
-            <li><strong>IaC:</strong> Terraform</li>
-            <li><strong>Configuration Management:</strong> Ansible</li>
-            <li><strong>CI/CD Automation:</strong> Jenkins (Master on Bastion, Application Node)</li>
-            <li><strong>Containerization:</strong> Docker & Docker Compose (Docker Hub Registry)</li>
-            <li><strong>Application Tier:</strong> Node.js Express REST API (Port 5000)</li>
-            <li><strong>Frontend Tier:</strong> Nginx Web Server / Static HTML (Port 80)</li>
-            <li><strong>Database Tier:</strong> MySQL 8.0 in Private Subnet (Port 3306)</li>
-        </ul>
+    <!-- SYSTEM HEALTH STATUS -->
+    <div class="status-banner">
+        <div class="status-left">
+            <div id="status-icon" class="status-icon success">⏳</div>
+            <div class="status-text">
+                <h4 id="status-title">Checking System Connectivity...</h4>
+                <p id="status-desc">Verifying communication between Frontend, Backend, and MySQL database.</p>
+            </div>
+        </div>
+        <div>
+            <button class="btn btn-outline" onclick="checkHealth()">🔄 Test Connection</button>
+        </div>
+    </div>
+
+    <!-- PRODUCT CATALOG -->
+    <div class="catalog-header">
+        <div>
+            <h2>🛍️ Featured Products</h2>
+            <p style="color: var(--text-muted); font-size: 13px;">Live inventory queried directly from the MySQL database tier</p>
+        </div>
+        <button class="btn" onclick="loadProducts()">Refresh Catalog</button>
+    </div>
+
+    <!-- PRODUCTS GRID -->
+    <div id="product-grid" class="product-grid">
+        <p style="padding: 20px; color: var(--text-muted);">Loading products from database...</p>
+    </div>
+
+    <!-- ADD PRODUCT FORM -->
+    <div class="add-product-card">
+        <h3>➕ Add Product to MySQL Store</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 18px;">
+            Test real-time write operations to the database tier across the custom Docker network.
+        </p>
+        <form id="add-product-form" onsubmit="handleCreateProduct(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="p-name" placeholder="e.g. iPad Air 11" required>
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="p-price" placeholder="59900" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="p-category" placeholder="Tablets" required>
+                </div>
+                <div class="form-group">
+                    <label>Stock Quantity</label>
+                    <input type="number" id="p-stock" value="20" required>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label>Description</label>
+                <input type="text" id="p-desc" placeholder="M2 chip, 128GB, Liquid Retina display" required>
+            </div>
+            <button type="submit" class="btn">Add to Database</button>
+        </form>
+    </div>
+
+    <!-- DEVOPS ARCHITECTURE SPECIFICATIONS -->
+    <div class="devops-info">
+        <h3>⚙️ DevOps Deployment Infrastructure</h3>
+        <div class="specs-grid">
+            <div class="spec-item">
+                <h5>Cloud Infrastructure (IaC)</h5>
+                <p>AWS Terraform (VPC, 2 Public & 1 Private Subnet, IGW, NAT)</p>
+            </div>
+            <div class="spec-item">
+                <h5>Configuration Management</h5>
+                <p>Ansible (Docker, Docker Compose, Node.js, Git, MySQL)</p>
+            </div>
+            <div class="spec-item">
+                <h5>CI/CD Automation</h5>
+                <p>Jenkins Pipeline with SSH Application Agent Node</p>
+            </div>
+            <div class="spec-item">
+                <h5>Container Network</h5>
+                <p>Custom Bridge: <code>ecommerce-network</code></p>
+            </div>
+        </div>
     </div>
 
 </div>
 
+<!-- FOOTER -->
+<footer>
+    <p>CloudMart E-Commerce Platform &bull; Automated 3-Tier DevOps Deployment &bull; AWS &bull; Terraform &bull; Ansible &bull; Docker &bull; Jenkins</p>
+</footer>
+
+<div id="notification"></div>
+
 <script>
-async function checkBackend() {
-    const status = document.getElementById("status");
-    status.innerText = "Checking backend and database connection...";
-    status.style.color = "#2563eb";
+    let cartCount = 0;
 
-    try {
-        const response = await fetch("/api/health");
-        const data = await response.json();
-
-        if (data.status === "success") {
-            status.innerText = "✅ " + data.message;
-            status.style.color = "#059669";
-        } else {
-            status.innerText = "⚠️ " + data.message;
-            status.style.color = "#d97706";
-        }
-    } catch (error) {
-        status.innerText = "❌ Backend is currently unavailable.";
-        status.style.color = "#dc2626";
+    function showNotification(msg, isSuccess = true) {
+        const toast = document.getElementById("notification");
+        toast.innerText = msg;
+        toast.style.background = isSuccess ? "#0f172a" : "#dc2626";
+        toast.style.display = "block";
+        setTimeout(() => {
+            toast.style.display = "none";
+        }, 3000);
     }
-}
 
-async function loadProducts() {
-    const container = document.getElementById("products-list");
-    container.innerHTML = "<p>Loading products from database...</p>";
-
-    try {
-        const response = await fetch("/api/products");
-        const products = await response.json();
-
-        if (Array.isArray(products) && products.length > 0) {
-            container.innerHTML = products.map(item => `
-                <div class="product-card">
-                    <span class="badge">Item #${item.id}</span>
-                    <h3>${item.name}</h3>
-                    <div class="price">₹${parseFloat(item.price).toFixed(2)}</div>
-                    <p>${item.description}</p>
-                </div>
-            `).join("");
-        } else {
-            container.innerHTML = "<p>No products found in the database.</p>";
-        }
-    } catch (error) {
-        container.innerHTML = "<p style='color:red;'>Could not load products. Ensure backend is running.</p>";
+    function addToCart(productName) {
+        cartCount++;
+        document.getElementById("cart-count").innerText = cartCount;
+        showNotification(`🛒 Added "${productName}" to cart!`);
     }
-}
 
-// Auto-load products on page open
-window.onload = function() {
-    checkBackend();
-    loadProducts();
-};
+    async function checkHealth() {
+        const icon = document.getElementById("status-icon");
+        const title = document.getElementById("status-title");
+        const desc = document.getElementById("status-desc");
+
+        title.innerText = "Testing connectivity...";
+        desc.innerText = "Querying /api/health endpoint...";
+        icon.className = "status-icon";
+        icon.innerText = "⏳";
+
+        try {
+            const res = await fetch("/api/health");
+            const data = await res.json();
+
+            if (data.status === "success") {
+                icon.className = "status-icon success";
+                icon.innerText = "✅";
+                title.innerText = "All 3 Tiers Operational!";
+                desc.innerText = `Frontend, Backend, and MySQL (${data.database_host}) connected successfully.`;
+            } else {
+                icon.className = "status-icon error";
+                icon.innerText = "⚠️";
+                title.innerText = "Database Disconnected";
+                desc.innerText = data.message || "Backend running, but MySQL connection failed.";
+            }
+        } catch (err) {
+            icon.className = "status-icon error";
+            icon.innerText = "❌";
+            title.innerText = "Backend API Unreachable";
+            desc.innerText = "Could not reach the Node.js backend through Nginx reverse proxy.";
+        }
+    }
+
+    async function loadProducts() {
+        const grid = document.getElementById("product-grid");
+        grid.innerHTML = `<p style="padding: 20px; color: var(--text-muted);">Fetching catalog from MySQL...</p>`;
+
+        try {
+            const res = await fetch("/api/products");
+            const products = await res.json();
+
+            if (Array.isArray(products) && products.length > 0) {
+                grid.innerHTML = products.map(p => `
+                    <div class="product-card">
+                        <div>
+                            <span class="prod-category">${p.category || 'General'}</span>
+                            <div class="prod-name">${escapeHtml(p.name)}</div>
+                            <div class="prod-desc">${escapeHtml(p.description || '')}</div>
+                        </div>
+                        <div>
+                            <div class="prod-bottom">
+                                <div>
+                                    <div class="prod-price">₹${parseFloat(p.price).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                                    <div class="prod-stock">In Stock (${p.stock || 25})</div>
+                                </div>
+                                <button class="btn" style="padding: 8px 14px;" onclick="addToCart('${escapeHtml(p.name)}')">Buy</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                grid.innerHTML = `<p style="padding: 20px; color: var(--text-muted);">No products found. Add some above!</p>`;
+            }
+        } catch (err) {
+            grid.innerHTML = `<p style="padding: 20px; color: var(--danger);">Failed to load products. Check Backend and MySQL status.</p>`;
+        }
+    }
+
+    async function handleCreateProduct(e) {
+        e.preventDefault();
+        const name = document.getElementById("p-name").value;
+        const price = parseFloat(document.getElementById("p-price").value);
+        const category = document.getElementById("p-category").value;
+        const stock = parseInt(document.getElementById("p-stock").value);
+        const description = document.getElementById("p-desc").value;
+
+        try {
+            const res = await fetch("/api/products", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, price, category, stock, description })
+            });
+
+            if (res.ok) {
+                showNotification("✅ Product added to MySQL database!");
+                document.getElementById("add-product-form").reset();
+                loadProducts();
+            } else {
+                showNotification("❌ Failed to add product.", false);
+            }
+        } catch (err) {
+            showNotification("❌ Network error connecting to backend.", false);
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, function(m) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[m];
+        });
+    }
+
+    window.onload = function() {
+        checkHealth();
+        loadProducts();
+    };
 </script>
 
 </body>

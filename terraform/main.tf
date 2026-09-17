@@ -43,7 +43,7 @@ data "aws_ami" "ubuntu" {
 }
 
 # =========================================================
-# EXISTING AWS KEY PAIR
+# EXISTING AWS KEY PAIR (prt2)
 # =========================================================
 
 data "aws_key_pair" "existing" {
@@ -65,28 +65,39 @@ resource "aws_vpc" "main" {
 }
 
 # =========================================================
-# PUBLIC SUBNET
+# 2 PUBLIC SUBNETS
 # =========================================================
 
-resource "aws_subnet" "public" {
+resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
   availability_zone       = "${var.aws_region}a"
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "ecommerce-public-subnet"
+    Name = "ecommerce-public-subnet-1"
+  }
+}
+
+resource "aws_subnet" "public_2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "${var.aws_region}b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "ecommerce-public-subnet-2"
   }
 }
 
 # =========================================================
-# PRIVATE SUBNET
+# 1 PRIVATE SUBNET
 # =========================================================
 
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "${var.aws_region}b"
+  cidr_block        = "10.0.3.0/24"
+  availability_zone = "${var.aws_region}a"
 
   tags = {
     Name = "ecommerce-private-subnet"
@@ -106,7 +117,7 @@ resource "aws_internet_gateway" "main" {
 }
 
 # =========================================================
-# PUBLIC ROUTE TABLE
+# PUBLIC ROUTE TABLE & ASSOCIATIONS
 # =========================================================
 
 resource "aws_route_table" "public" {
@@ -122,13 +133,18 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
+resource "aws_route_table_association" "public_1" {
+  subnet_id      = aws_subnet.public_1.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_2" {
+  subnet_id      = aws_subnet.public_2.id
   route_table_id = aws_route_table.public.id
 }
 
 # =========================================================
-# NAT GATEWAY ELASTIC IP
+# NAT GATEWAY ELASTIC IP & NAT GATEWAY
 # =========================================================
 
 resource "aws_eip" "nat" {
@@ -139,13 +155,9 @@ resource "aws_eip" "nat" {
   }
 }
 
-# =========================================================
-# NAT GATEWAY
-# =========================================================
-
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public.id
+  subnet_id     = aws_subnet.public_1.id
 
   depends_on = [
     aws_internet_gateway.main
@@ -157,7 +169,7 @@ resource "aws_nat_gateway" "main" {
 }
 
 # =========================================================
-# PRIVATE ROUTE TABLE
+# PRIVATE ROUTE TABLE & ASSOCIATION
 # =========================================================
 
 resource "aws_route_table" "private" {
@@ -204,7 +216,7 @@ resource "aws_security_group" "public" {
   }
 
   ingress {
-    description = "HTTP"
+    description = "HTTP Frontend"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -212,17 +224,17 @@ resource "aws_security_group" "public" {
   }
 
   ingress {
-    description = "Frontend"
-    from_port   = 3000
-    to_port     = 3000
+    description = "Node.js Backend"
+    from_port   = 5000
+    to_port     = 5000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description = "Backend"
-    from_port   = 5000
-    to_port     = 5000
+    description = "Custom Port 3000"
+    from_port   = 3000
+    to_port     = 3000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -277,13 +289,13 @@ resource "aws_security_group" "database" {
 }
 
 # =========================================================
-# BASTION / JENKINS
+# BASTION / JENKINS (Public Subnet 1)
 # =========================================================
 
 resource "aws_instance" "bastion" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.large"
-  subnet_id              = aws_subnet.public.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.public_1.id
   vpc_security_group_ids = [aws_security_group.public.id]
   key_name               = data.aws_key_pair.existing.key_name
 
@@ -300,13 +312,13 @@ resource "aws_instance" "bastion" {
 }
 
 # =========================================================
-# APPLICATION
+# APPLICATION (Public Subnet 2)
 # =========================================================
 
 resource "aws_instance" "application" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.large"
-  subnet_id              = aws_subnet.public.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.public_2.id
   vpc_security_group_ids = [aws_security_group.public.id]
   key_name               = data.aws_key_pair.existing.key_name
 
@@ -323,12 +335,12 @@ resource "aws_instance" "application" {
 }
 
 # =========================================================
-# DATABASE
+# DATABASE (Private Subnet)
 # =========================================================
 
 resource "aws_instance" "database" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.large"
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.private.id
   vpc_security_group_ids = [aws_security_group.database.id]
   key_name               = data.aws_key_pair.existing.key_name

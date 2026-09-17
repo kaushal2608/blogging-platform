@@ -4,20 +4,23 @@
   become: true
 
   tasks:
-
     - name: Update apt cache
       apt:
         update_cache: true
         cache_valid_time: 3600
 
-    - name: Install Docker and Docker Compose
+    - name: Install Docker, Docker Compose, Node.js, and Git
       apt:
         name:
           - docker.io
           - docker-compose-v2
+          - nodejs
+          - npm
+          - git
+          - curl
         state: present
 
-    - name: Start Docker
+    - name: Start and enable Docker service
       systemd:
         name: docker
         state: started
@@ -29,23 +32,33 @@
         groups: docker
         append: true
 
-    - name: Verify Docker
+    - name: Verify Docker installation
       command: docker --version
       register: docker_version
       changed_when: false
 
-    - name: Verify Docker Compose
+    - name: Verify Docker Compose installation
       command: docker compose version
       register: compose_version
       changed_when: false
 
-    - name: Show Docker version
-      debug:
-        var: docker_version.stdout
+    - name: Verify Node.js installation
+      command: node --version
+      register: node_version
+      changed_when: false
 
-    - name: Show Docker Compose version
+    - name: Verify Git installation
+      command: git --version
+      register: git_version
+      changed_when: false
+
+    - name: Show installed tool versions on Application Server
       debug:
-        var: compose_version.stdout
+        msg:
+          - "Docker: {{ docker_version.stdout }}"
+          - "Docker Compose: {{ compose_version.stdout }}"
+          - "Node.js: {{ node_version.stdout }}"
+          - "Git: {{ git_version.stdout }}"
 
 
 - name: Configure Database Server
@@ -53,46 +66,48 @@
   become: true
 
   tasks:
-
     - name: Update apt cache
       apt:
         update_cache: true
         cache_valid_time: 3600
 
-    - name: Install MySQL
+    - name: Install MySQL Server
       apt:
         name:
           - mysql-server
           - python3-pymysql
         state: present
 
-    - name: Configure MySQL to accept network connections
+    - name: Configure MySQL to accept remote network connections
       lineinfile:
         path: /etc/mysql/mysql.conf.d/mysqld.cnf
         regexp: '^bind-address'
         line: 'bind-address = 0.0.0.0'
       notify: Restart MySQL
 
-    - name: Start MySQL
+    - name: Start and enable MySQL service
       systemd:
         name: mysql
         state: started
         enabled: true
 
-    - name: Create ecommerce database
+    - name: Flush handlers to ensure MySQL is restarted if config changed
+      meta: flush_handlers
+
+    - name: Create e-commerce database (ecomdb)
       shell: |
         mysql -u root <<'SQL'
         CREATE DATABASE IF NOT EXISTS ecomdb;
         SQL
       changed_when: false
 
-    - name: Create ecommerce database user
+    - name: Create e-commerce database user (ecomuser)
       shell: |
         mysql -u root <<'SQL'
         CREATE USER IF NOT EXISTS 'ecomuser'@'%' IDENTIFIED BY 'ecompassword';
         GRANT ALL PRIVILEGES ON ecomdb.* TO 'ecomuser'@'%';
-        CREATE USER IF NOT EXISTS 'ecomuser'@'10.0.1.%' IDENTIFIED BY 'ecompassword';
-        GRANT ALL PRIVILEGES ON ecomdb.* TO 'ecomuser'@'10.0.1.%';
+        CREATE USER IF NOT EXISTS 'ecomuser'@'10.0.%' IDENTIFIED BY 'ecompassword';
+        GRANT ALL PRIVILEGES ON ecomdb.* TO 'ecomuser'@'10.0.%';
         FLUSH PRIVILEGES;
         SQL
       changed_when: false
@@ -104,58 +119,62 @@
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           price DECIMAL(10, 2) NOT NULL,
+          category VARCHAR(100) NOT NULL,
           description TEXT NOT NULL,
+          stock INT DEFAULT 50,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         SQL
       changed_when: false
 
-    - name: Insert sample products
+    - name: Insert initial e-commerce products
       shell: |
         mysql -u root ecomdb <<'SQL'
-        INSERT INTO products (name, price, description)
-        SELECT 'Laptop', 55000.00, 'High performance laptop for development'
-        WHERE NOT EXISTS (
-          SELECT 1 FROM products WHERE name = 'Laptop'
-        );
-        INSERT INTO products (name, price, description)
-        SELECT 'Wireless Mouse', 800.00, 'Ergonomic 2.4GHz wireless optical mouse'
-        WHERE NOT EXISTS (
-          SELECT 1 FROM products WHERE name = 'Wireless Mouse'
-        );
-        INSERT INTO products (name, price, description)
-        SELECT 'Mechanical Keyboard', 2500.00, 'RGB backlit mechanical tactile keyboard'
-        WHERE NOT EXISTS (
-          SELECT 1 FROM products WHERE name = 'Mechanical Keyboard'
-        );
-        INSERT INTO products (name, price, description)
-        SELECT 'Gaming Headset', 1800.00, 'Noise-cancelling surround sound headphones'
-        WHERE NOT EXISTS (
-          SELECT 1 FROM products WHERE name = 'Gaming Headset'
-        );
+        INSERT INTO products (name, price, category, description, stock)
+        SELECT 'MacBook Pro M3', 199990.00, 'Laptops', 'Apple M3 Pro chip, 18GB Unified Memory, 512GB SSD', 25
+        WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'MacBook Pro M3');
+
+        INSERT INTO products (name, price, category, description, stock)
+        SELECT 'Sony WH-1000XM5', 29990.00, 'Audio', 'Industry Leading Wireless Noise Cancelling Headphones', 40
+        WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Sony WH-1000XM5');
+
+        INSERT INTO products (name, price, category, description, stock)
+        SELECT 'Logitech MX Master 3S', 8995.00, 'Accessories', 'Performance Wireless Mouse with Quiet Clicks', 60
+        WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Logitech MX Master 3S');
+
+        INSERT INTO products (name, price, category, description, stock)
+        SELECT 'Keychron Q1 Pro', 18499.00, 'Keyboards', 'Custom Wireless Mechanical Keyboard RGB Backlit', 30
+        WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Keychron Q1 Pro');
+
+        INSERT INTO products (name, price, category, description, stock)
+        SELECT 'Dell UltraSharp 27" 4K', 45500.00, 'Monitors', '4K UHD USB-C Hub Monitor with IPS Black Technology', 15
+        WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Dell UltraSharp 27" 4K');
         SQL
       changed_when: false
 
-    - name: Verify MySQL
+    - name: Verify MySQL version
       command: mysql --version
       register: mysql_version
       changed_when: false
 
-    - name: Show MySQL version
-      debug:
-        var: mysql_version.stdout
-
-    - name: Verify ecommerce database
+    - name: Verify ecomdb database exists
       shell: mysql -u root -e "SHOW DATABASES;" | grep -w ecomdb
-      register: database_check
+      register: db_check
       changed_when: false
 
-    - name: Show database verification
+    - name: Verify products table count
+      shell: mysql -u root ecomdb -e "SELECT COUNT(*) FROM products;"
+      register: product_count
+      changed_when: false
+
+    - name: Show Database verification details
       debug:
-        var: database_check.stdout
+        msg:
+          - "MySQL Version: {{ mysql_version.stdout }}"
+          - "Database Found: {{ db_check.stdout }}"
+          - "Product Records: {{ product_count.stdout_lines[1] }}"
 
   handlers:
-
     - name: Restart MySQL
       systemd:
         name: mysql
